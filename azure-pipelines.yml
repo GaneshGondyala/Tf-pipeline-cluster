@@ -1,0 +1,85 @@
+trigger:
+- main
+pool:
+  vmImage: ubuntu-latest
+variables:
+- name: DEV_ENVIRONMENT
+  value: dev
+- name: QA_ENVIRONMENT
+  value: qa 
+stages:
+- stage: TerraformValidate
+  jobs:
+  - job: TerraformValidateJob
+    continueOnError: false
+    steps:
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Terraform Manifest Artifacts
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/Terraform-manifest' # copying terraform manifest from Terraform-manifest to Terraform-manifest-out to use in deployment stage
+        artifact: 'Terraform-manifest-out'
+        publishLocation: 'pipeline'  # This is the location in Ubuntu where Terraform-manifest-out file will store
+
+    - task: TerraformCLI@2
+      displayName: Terraform Init
+      inputs:
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest'
+        backendType: 'azurerm'
+        backendServiceArm: 'Azure-subscription-service' # Service connection of resource manager
+        ensureBackend: true
+        backendAzureRmResourceGroupName: 'rg-storage-accounts-1' # Existing resource group which contains storage accounts
+        backendAzureRmResourceGroupLocation: 'East US' # Tfstate file will be created in this location
+        backendAzureRmStorageAccountName: 'tfstorageaccountbhanu' # Storage account name
+        backendAzureRmContainerName: 'tfstatefiles' # Existing container name
+        backendAzureRmKey: 'Tf-storage-account-pipeline' # This is the name of tfstate file going to be created
+        allowTelemetryCollection: false 
+
+    - task: TerraformCLI@2
+      displayName: Terraform Validate
+      inputs:
+        command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest'
+        allowTelemetryCollection: false
+
+- stage: DeployStorageAccount 
+  jobs:
+    - deployment: DeployDevStorageAccounts
+      displayName: Deploy Dev Storage Accounts
+      pool:
+        vmImage: ubuntu-latest
+      environment: $(DEV_ENVIRONMENT)
+      strategy:
+       runOnce:
+         deploy:
+           steps:
+           - task: TerraformCLI@2
+             displayName: Terraform Init
+             inputs:
+               command: 'init'
+               workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out' # This is the artifact which came from the previous stage
+               backendType: 'azurerm'
+               backendServiceArm: 'Azure-subscription-service' # Service connection of resource manager
+               ensureBackend: true
+               backendAzureRmResourceGroupName: 'rg-storage-accounts-1'
+               backendAzureRmResourceGroupLocation: 'East US'
+               backendAzureRmStorageAccountName: 'tfstorageaccountbhanu'
+               backendAzureRmContainerName: 'tfstatefiles'
+               backendAzureRmKey: 'Tf-storage-account-pipeline'
+               allowTelemetryCollection: false
+
+           - task: TerraformCLI@2
+             displayName: Terraform Plan
+             inputs:
+               command: 'plan'
+               workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
+               environmentServiceName: 'Azure-subscription-service'
+               allowTelemetryCollection: false
+
+           - task: TerraformCLI@2
+             displayName: Terraform Apply
+             inputs:
+               command: 'apply'
+               workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
+               environmentServiceName: 'Azure-subscription-service'
+               allowTelemetryCollection: false
