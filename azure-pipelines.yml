@@ -25,7 +25,7 @@ stages:
         command: 'init'
         workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest'
         backendType: 'azurerm'
-        backendServiceArm: 'Azure-subscription-service'
+        backendServiceArm: 'terraform-aks-azurerm-svc-con'
         backendAzureRmResourceGroupName: 'Ganesh-rg'
         backendAzureRmStorageAccountName: 'ganeshstorageact'
         backendAzureRmContainerName: 'ganeshstoragecontainer'
@@ -59,7 +59,7 @@ stages:
                 command: 'init'
                 workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
                 backendType: 'azurerm'
-                backendServiceArm: 'Azure-subscription-service'
+                backendServiceArm: 'terraform-aks-azurerm-svc-con'
                 backendAzureRmResourceGroupName: 'Ganesh-rg'
                 backendAzureRmStorageAccountName: 'ganeshstorageact'
                 backendAzureRmContainerName: 'ganeshstoragecontainer'
@@ -69,13 +69,14 @@ stages:
               inputs:
                 command: 'plan'
                 workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
-                environmentServiceName: 'Azure-subscription-service'
+                environmentServiceName: 'terraform-aks-azurerm-svc-con'
                 allowTelemetryCollection: false
             - task: TerraformCLI@2
               inputs:
                 command: 'apply'
                 workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
-                environmentServiceName: 'Azure-subscription-service'
-                allowTelemetryCollection: false
+                environmentServiceName: 'terraform-aks-azurerm-svc-con'
+                allowTelemetryCollection: true
+            
           
           
