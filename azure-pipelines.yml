@@ -57,7 +57,7 @@ stages:
             - task: TerraformCLI@2
               inputs:
                 command: 'init'
-                workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest-out'
+                workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
                 backendType: 'azurerm'
                 backendServiceArm: 'Azure-subscription-service'
                 backendAzureRmResourceGroupName: 'Ganesh-rg'
@@ -68,13 +68,13 @@ stages:
             - task: TerraformCLI@2
               inputs:
                 command: 'plan'
-                workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest-out'
+                workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
                 environmentServiceName: 'Azure-subscription-service'
                 allowTelemetryCollection: false
             - task: TerraformCLI@2
               inputs:
                 command: 'apply'
-                workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest-out'
+                workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
                 environmentServiceName: 'Azure-subscription-service'
                 allowTelemetryCollection: false
           
