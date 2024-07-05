@@ -9,10 +9,11 @@ variables:
   value: qa 
 stages:
 - stage: TerraformValidate
+  displayName: Validate Terraform
   jobs:
   - job: TerraformValidateJob
+    displayName: Terraform Validate Job
     continueOnError: false
-
     steps:
     - task: PublishPipelineArtifact@1
       displayName: Publish Terraform Manifest Artifacts
@@ -21,6 +22,7 @@ stages:
         artifact: 'Terraform-manifest-out'
         publishLocation: 'pipeline'  # This is the location in Ubuntu where Terraform-manifest-out file will store
     - task: TerraformCLI@2
+      displayName: Terraform Init
       inputs:
         command: 'init'
         workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest'
@@ -32,16 +34,14 @@ stages:
         backendAzureRmKey: 'tfcluster.tfstate'
         allowTelemetryCollection: false
     - task: TerraformCLI@2
+      displayName: Terraform Validate
       inputs:
         command: 'validate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/Terraform-manifest'
         allowTelemetryCollection: false
 
-
-   
-
-
 - stage: DeployStorageAccount 
+  displayName: Deploy Storage Account
   jobs:
     - deployment: DeployDevStorageAccounts
       displayName: Deploy Dev Storage Accounts
@@ -52,9 +52,8 @@ stages:
        runOnce:
          deploy:
            steps:
-
-         
             - task: TerraformCLI@2
+              displayName: Terraform Init
               inputs:
                 command: 'init'
                 workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
@@ -66,17 +65,16 @@ stages:
                 backendAzureRmKey: 'tfcluster.tfstate'
                 allowTelemetryCollection: false
             - task: TerraformCLI@2
+              displayName: Terraform Plan
               inputs:
                 command: 'plan'
                 workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
                 environmentServiceName: 'terraform-aks-azurerm-svc-con'
                 allowTelemetryCollection: false
             - task: TerraformCLI@2
+              displayName: Terraform Apply
               inputs:
                 command: 'apply'
                 workingDirectory: '$(Pipeline.Workspace)/Terraform-manifest-out'
                 environmentServiceName: 'terraform-aks-azurerm-svc-con'
                 allowTelemetryCollection: true
-            
-          
-          
